@@ -2,6 +2,11 @@
 using MauiBackend.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 [Route("api/users")]
 [ApiController]
@@ -29,6 +34,10 @@ public class UserController : ControllerBase
         await _mongoDbService.CreateUserAsync(user);
         return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
     }
+
+    private const string SecretKey = "MegaHemligNyckel1337";
+    private const int TokenExpiryMinute = 30;
+
     [HttpPost("login")]
     public async Task<ActionResult> LoginUser([FromBody]LoginDto loginDto)
     {
@@ -39,11 +48,33 @@ public class UserController : ControllerBase
 
         bool loginSuccess = await _mongoDbService.LoginAsync(loginDto);
 
-        if (!loginSuccess)
+        if (loginSuccess)
         {
-            return Unauthorized("Invalid username or password!");
+            var token = GenerateJwtTokens(loginDto.Username);
+            return Ok(new { token });
         }
+        
+        return Unauthorized("Invalid username or password!");
+    }
 
-        return Ok(new { Message = "Login successfull!" });
+    private string GenerateJwtTokens(string username)
+    {
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, username),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: "MauiBackend",
+            audience: "MauiTrading",
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(TokenExpiryMinute),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

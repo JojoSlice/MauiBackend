@@ -2,6 +2,7 @@
 using MongoDB.Bson;
 using Microsoft.Extensions.Options;
 using MauiBackend.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace MauiBackend.Services
 {
@@ -36,19 +37,24 @@ namespace MauiBackend.Services
         {
             var user = await _usersCollection.Find(u => u.Username == loginDto.Username).FirstOrDefaultAsync();
 
+            Console.WriteLine($"Användare loggar in: {loginDto.Username} Pass: {loginDto.Password}");
+            Console.WriteLine($"Mongo hittade {user.Username}");
             if (user == null)
             {
+                Console.WriteLine("Användare hittades inte!");
                 return false;
             }
 
-            bool passwordMatches = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password);
-
-            if (!passwordMatches)
+            if(BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password))
             {
+                Console.WriteLine("Lösenord matchade");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Lösenordet matchade inte, kolla över rehash");
                 return false;
             }
-
-            return passwordMatches;
         } 
         public async Task CreateUserAsync(User user)
         {

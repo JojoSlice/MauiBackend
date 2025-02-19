@@ -12,7 +12,7 @@ namespace MauiBackend
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var key = Encoding.UTF8.GetBytes("MegaHemligNyckel1337");
+            var key = Encoding.UTF8.GetBytes("MegaHemligNyckel1337MegaHemligNyckel1337");
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>

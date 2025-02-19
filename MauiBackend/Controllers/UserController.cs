@@ -1,4 +1,5 @@
-﻿using MauiBackend.Models;
+﻿using MauiBackend;
+using MauiBackend.Models;
 using MauiBackend.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +19,7 @@ public class UserController : ControllerBase
         _mongoDbService = mongoDbService;
     }
 
-    [HttpGet]
+    [HttpGet("register")]
     public async Task<ActionResult<List<User>>> GetUsers()
     {
         return await _mongoDbService.GetUsersAsync();
@@ -35,7 +36,7 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(GetUsers), new { id = user.Id }, user);
     }
 
-    private const string SecretKey = "MegaHemligNyckel1337";
+    private const string SecretKey = "MegaHemligNyckel1337MegaHemligNyckel1337";
     private const int TokenExpiryMinute = 30;
 
     [HttpPost("login")]

@@ -23,7 +23,7 @@ namespace MauiBackend.Models
         public bool IsLong { get; set; }
 
         public DateTime TradeDate { get; set; } = DateTime.UtcNow;
-        public string Status { get; set; } = "Open";
+        public bool IsOpen { get; set; } = true;
 
         public double? StopLoss { get; set; }
         public double? TakeProfit { get; set; }

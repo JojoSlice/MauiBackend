@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +27,10 @@ namespace MauiBackend.Controllers
                 {
                     var jsonResponse = await response.Content.ReadAsStringAsync();
                     var marketStatus = JsonSerializer.Deserialize<MarketStatus>(jsonResponse);
-                    return marketStatus;
+                    if (marketStatus != null)
+                        return marketStatus;
+                    else
+                        throw new Exception("MarketStatus was not found");
                 }
                 else
                 {
@@ -41,9 +45,14 @@ namespace MauiBackend.Controllers
         }
         public class MarketStatus
         {
-            public string Market { get; set; }
+            [JsonPropertyName("exchange")]
+            public string Exchange { get; set; }
+            [JsonPropertyName("holiday")]
+            public string? Holiday { get; set; }
+            [JsonPropertyName("isOpen")]
             public bool IsOpen { get; set; }
-            public string CurrentSession { get; set; }
+            [JsonPropertyName("session")]
+            public string? CurrentSession { get; set; }
         }
     }
 }

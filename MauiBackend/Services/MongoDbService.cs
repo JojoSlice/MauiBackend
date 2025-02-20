@@ -37,22 +37,17 @@ namespace MauiBackend.Services
         {
             var user = await _usersCollection.Find(u => u.Username == loginDto.Username).FirstOrDefaultAsync();
 
-            Console.WriteLine($"Användare loggar in: {loginDto.Username} Pass: {loginDto.Password}");
-            Console.WriteLine($"Mongo hittade {user.Username}");
             if (user == null)
             {
-                Console.WriteLine("Användare hittades inte!");
                 return false;
             }
 
             if(BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password))
             {
-                Console.WriteLine("Lösenord matchade");
                 return true;
             }
             else
             {
-                Console.WriteLine("Lösenordet matchade inte, kolla över rehash");
                 return false;
             }
         } 
@@ -113,23 +108,34 @@ namespace MauiBackend.Services
 
         }
 
-        //Lös senare!
+        //Lös/Kontrollera senare!
         //Kan vara bra att se till att varken takeprofit eller stoploss hamnar för nära currentPrice
-        public async Task UpdateTakeProfitAsync(string tradeId, double takeProfit)
+        public async Task UpdateTakeProfitAsync(string tradeId, double takeProfit, double currentPrice)
         {
             var filter = Builders<TradeData>.Filter.Eq(td => td.Id, tradeId);
             var trade = await _tradeDataCollection.Find(filter).FirstOrDefaultAsync();
 
+
             if (trade != null)
-                trade.TakeProfit = takeProfit;
+            {
+                if (takeProfit <= currentPrice)
+                    return;
+                else
+                    trade.TakeProfit = takeProfit;
+            } 
         }
-        public async Task UpdateStopLossAsync(string tradeId, double stopLoss)
+        public async Task UpdateStopLossAsync(string tradeId, double stopLoss, double currentPrice)
         {
             var filter = Builders<TradeData>.Filter.Eq(td => td.Id, tradeId);
             var trade = await _tradeDataCollection.Find(filter).FirstOrDefaultAsync();
 
             if (trade != null)
-                trade.StopLoss = stopLoss;
+            {
+                if (stopLoss >= currentPrice)
+                    return;
+                else
+                    trade.StopLoss = stopLoss;
+            }
         }
 
         public async Task UpdateTradeAsync(string userId, double currentPrice)

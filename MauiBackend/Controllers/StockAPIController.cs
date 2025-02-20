@@ -13,21 +13,23 @@ namespace MauiBackend.Controllers
     {
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _apiKey = "curg10hr01qgoblekt90curg10hr01qgoblekt9g";
-        private readonly IMemoryCache _cache;
-        private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(10);
+        //private readonly IMemoryCache _cache;
+        //private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(10);
 
-        public StockAPIController(IMemoryCache cache)
-        {
-            _cache = cache;
-        }
+        //public StockAPIController(IMemoryCache cache)
+        //{
+        //    _cache = cache;
+        //}
 
         [HttpGet("status")]
         public async Task<MarketStatus> GetMarketStatus()
         {
-            if (_cache.TryGetValue("MarketStatus", out MarketStatus cachedStatus))
-            {
-                return cachedStatus;
-            }
+            Console.WriteLine("Api call made");
+
+            //if (_cache.TryGetValue("MarketStatus", out MarketStatus cachedStatus))
+            //{
+            //    return cachedStatus;
+            //}
 
             var url = $"https://finnhub.io/api/v1/stock/market-status?exchange=US&token={_apiKey}";
 
@@ -41,7 +43,7 @@ namespace MauiBackend.Controllers
                     var marketStatus = JsonSerializer.Deserialize<MarketStatus>(jsonResponse);
                     if (marketStatus != null)
                     {
-                        _cache.Set("MarketStatus", marketStatus, _cacheDuration);
+                        //_cache.Set("MarketStatus", marketStatus, _cacheDuration);
                         return marketStatus;
                     }
                     else

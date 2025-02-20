@@ -3,20 +3,32 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace MauiBackend.Controllers
 {
     [ApiController]
-    [Route("api/stocks")]
+    [Route("api/market")]
     public class StockAPIController : Controller
     {
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _apiKey = "curg10hr01qgoblekt90curg10hr01qgoblekt9g";
+        private readonly IMemoryCache _cache;
+        private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(10);
 
-
-        [HttpGet("prices")]
-        public async Task<MarketStatus> GetStockPrices()
+        public StockAPIController(IMemoryCache cache)
         {
+            _cache = cache;
+        }
+
+        [HttpGet("status")]
+        public async Task<MarketStatus> GetMarketStatus()
+        {
+            if (_cache.TryGetValue("MarketStatus", out MarketStatus cachedStatus))
+            {
+                return cachedStatus;
+            }
+
             var url = $"https://finnhub.io/api/v1/stock/market-status?exchange=US&token={_apiKey}";
 
             try
@@ -28,7 +40,10 @@ namespace MauiBackend.Controllers
                     var jsonResponse = await response.Content.ReadAsStringAsync();
                     var marketStatus = JsonSerializer.Deserialize<MarketStatus>(jsonResponse);
                     if (marketStatus != null)
+                    {
+                        _cache.Set("MarketStatus", marketStatus, _cacheDuration);
                         return marketStatus;
+                    }
                     else
                         throw new Exception("MarketStatus was not found");
                 }

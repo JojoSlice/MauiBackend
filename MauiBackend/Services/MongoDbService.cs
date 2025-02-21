@@ -35,10 +35,12 @@ namespace MauiBackend.Services
 
         public async Task<bool> LoginAsync(LoginDto loginDto)
         {
+            Console.WriteLine("Login Attempt");
             var user = await _usersCollection.Find(u => u.Username == loginDto.Username).FirstOrDefaultAsync();
 
             if (user == null)
             {
+                Console.WriteLine("User not found");
                 return false;
             }
 

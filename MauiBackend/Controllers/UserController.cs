@@ -19,13 +19,13 @@ public class UserController : ControllerBase
         _mongoDbService = mongoDbService;
     }
 
-    [HttpGet("register")]
+    [HttpGet]
     public async Task<ActionResult<List<User>>> GetUsers()
     {
         return await _mongoDbService.GetUsersAsync();
     }
 
-    [HttpPost]
+    [HttpPost("register")]
     public async Task<ActionResult> RegisterUser(User user)
     {
         if (await _mongoDbService.IsUsernameTakenAsync(user.Username))

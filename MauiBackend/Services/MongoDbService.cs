@@ -10,6 +10,7 @@ namespace MauiBackend.Services
     {
         private readonly IMongoCollection<User> _usersCollection;
         private readonly IMongoCollection<TradeData> _tradeDataCollection;
+        private readonly IMongoCollection<PnLData> _pnlDataCollection;
 
         public MongoDbService(IConfiguration config)
         {
@@ -17,6 +18,7 @@ namespace MauiBackend.Services
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _usersCollection = database.GetCollection<User>("Users");
             _tradeDataCollection = database.GetCollection<TradeData>("TradeData");
+            _pnlDataCollection = database.GetCollection<PnLData>("PnLData");
         }
 
 
@@ -32,6 +34,10 @@ namespace MauiBackend.Services
 
         public async Task<User> GetUserByIdAsync(string id) =>
             await _usersCollection.Find(user => user.Id == id).FirstOrDefaultAsync();
+
+        public async Task<User> GetUserByUsernameAsync(string username) =>
+            await _usersCollection.Find(user => user.Username == username).FirstOrDefaultAsync();
+
 
         public async Task<bool> LoginAsync(LoginDto loginDto)
         {
@@ -108,6 +114,41 @@ namespace MauiBackend.Services
                 await _tradeDataCollection.UpdateOneAsync(filter, update);
             }
 
+        }
+
+        //Allt som rör PnLData---------------------------------------------------------------
+        public async Task<PnLData> GetPnLAsync(string id) =>
+            await _pnlDataCollection.Find(pnl => pnl.Userid == id).FirstOrDefaultAsync();
+        public async Task<List<PnLData>> UpdatePnLAsync(string id)
+        {
+            var pnl = new List<PnLData>();
+            var filter = Builders<TradeData>.Filter.Eq(td => td.UserId, id);
+            var trades = await _tradeDataCollection.Find(filter).ToListAsync();
+
+
+            if (trades.Any())
+            {
+                var tradesByDate = trades.GroupBy(td => td.TradeDate.Date)
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        TotalPnL = g.Sum(t => t.PnL)
+                    })
+                    .OrderBy(g => g.Date)
+                    .ToList();
+
+                pnl.Clear();
+                foreach (var tradDate in tradesByDate)
+                {
+                    var tradePnL = new PnLData();
+                    tradePnL.Date = tradDate.Date;
+                    tradePnL.PnL = tradDate.TotalPnL.Value;
+
+                    pnl.Add(tradePnL);
+                }
+            }
+
+            return pnl;
         }
 
         //Lös/Kontrollera senare!

@@ -57,13 +57,7 @@ public class UserController : ControllerBase
         
         return Unauthorized("Invalid username or password!");
     }
-    [HttpPost("pnl")]
-    public async Task<ActionResult> GetPnL(string username)
-    {
-        var user = await _mongoDbService.GetUserByUsernameAsync(username);
-
-    }
-
+    
     private string GenerateJwtTokens(string username)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SecretKey));

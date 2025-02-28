@@ -16,7 +16,7 @@ namespace MauiBackend.Services
             _tradeDataService = tradeDataService;
         }
         public async Task<PnLData> GetPnLAsync(string id) =>
-            await _pnlDataCollection.Find(pnl => pnl.Userid == id).FirstOrDefaultAsync();
+            await _pnlDataCollection.Find(pnl => pnl.UserId == id).FirstOrDefaultAsync();
         public async Task<List<PnLData>> UpdatePnLAsync(string id)
         {
             var pnl = new List<PnLData>();

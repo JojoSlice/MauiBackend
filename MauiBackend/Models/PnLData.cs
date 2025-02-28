@@ -7,7 +7,7 @@ namespace MauiBackend.Models
     {
 
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Userid { get; set; }
+        public string UserId { get; set; }
         public double PnL { get; set; }
         public DateTime Date { get; set; }
     }

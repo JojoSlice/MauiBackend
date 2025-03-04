@@ -6,14 +6,18 @@ namespace MauiBackend.Services
     public class TradeDataService
     {
         private readonly IMongoCollection<TradeData> _tradeDataCollection;
-        public TradeDataService(IConfiguration config, MongoDbService mongoDbService)
+        private readonly PnLService _pnlService;
+        public TradeDataService(IConfiguration config, MongoDbService mongoDbService, PnLService pnLService)
         {
             var client = new MongoClient(config["MongoDB:ConnectionString"]);
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _tradeDataCollection = database.GetCollection<TradeData>("TradeData");
+            _pnlService = pnLService;
         }
-         public async Task AddTradeDataAsync(TradeData tradeData)
+        public async Task AddTradeDataAsync(TradeData tradeData)
         {
+            var pnl = _pnlService.GetTodaysPnL(tradeData.UserId); //Tänk ut hur Points ska hanteras!
+
             await _tradeDataCollection.InsertOneAsync(tradeData);
         }
 
@@ -23,6 +27,16 @@ namespace MauiBackend.Services
             var trades = await _tradeDataCollection.Find(filter).ToListAsync();
 
             return trades.Where(t => t.IsOpen == false).ToList();
+        }
+
+        public async Task<List<TradeData>> GetTradesBySeason(string userId, string season)
+        {
+            var filter = Builders<TradeData>.Filter.And(
+                Builders<TradeData>.Filter.Eq(td => td.UserId, userId),
+                Builders<TradeData>.Filter.Eq(td => td.Season, season)
+                );
+
+            return await _tradeDataCollection.Find(filter).ToListAsync();
         }
 
         public async Task<List<TradeData>> GetOpenOrClosedTradesByUserIdAsync(string userId, bool isOpen)
@@ -44,16 +58,16 @@ namespace MauiBackend.Services
                 double pnl = 0;
                 if (trade.IsLong)
                 {
-                    pnl = (exitPrice - trade.Price) * trade.Quantity;
+                    pnl = (exitPrice - trade.Price) * trade.Points;
                 }
                 else
                 {
-                    pnl = (trade.Price - exitPrice) * trade.Quantity;
+                    pnl = (trade.Price - exitPrice) * trade.Points;
                 }
 
                 var update = Builders<TradeData>.Update
                     .Set(td => td.IsOpen, false)
-                    .Set(td => td.PnL, pnl)
+                    .Set(td => td.PnLPercent, pnl)
                     .Set(td => td.ClosingPrice, exitPrice);
 
                 await _tradeDataCollection.UpdateOneAsync(filter, update);
@@ -106,13 +120,13 @@ namespace MauiBackend.Services
 
                 if (trade.IsLong)
                 {
-                    pnl = (currentPrice - trade.Price) * trade.Quantity;
+                    pnl = (currentPrice - trade.Price) * trade.Points;
                     takeProfitReached = currentPrice >= trade.TakeProfit;
                     stopLossReached = currentPrice <= trade.StopLoss;
                 }
                 else
                 {
-                    pnl = (trade.Price - currentPrice) * trade.Quantity;
+                    pnl = (trade.Price - currentPrice) * trade.Points;
                     takeProfitReached = currentPrice <= trade.TakeProfit;
                     stopLossReached = currentPrice >= trade.StopLoss;
                 }
@@ -121,16 +135,16 @@ namespace MauiBackend.Services
                 {
                     if (trade.IsLong)
                     {
-                        pnl = (currentPrice - trade.Price) * trade.Quantity;
+                        pnl = (currentPrice - trade.Price) * trade.Points;
                     }
                     else
                     {
-                        pnl = (trade.Price - currentPrice) * trade.Quantity;
+                        pnl = (trade.Price - currentPrice) * trade.Points;
                     }
 
                     var update = Builders<TradeData>.Update
                     .Set(td => td.IsOpen, false)
-                    .Set(td => td.PnL, trade.PnL);
+                    .Set(td => td.PnLPercent, trade.PnLPercent);
 
                     await _tradeDataCollection.UpdateOneAsync(
                         Builders<TradeData>.Filter.Eq(td => td.Id, trade.Id),
@@ -138,7 +152,7 @@ namespace MauiBackend.Services
                 }
                 else
                 {
-                    var update = Builders<TradeData>.Update.Set(td => td.PnL, pnl);
+                    var update = Builders<TradeData>.Update.Set(td => td.PnLPercent, pnl);
                     await _tradeDataCollection.UpdateOneAsync(
                         Builders<TradeData>.Filter.Eq(td => td.Id, trade.Id), update);
                 }

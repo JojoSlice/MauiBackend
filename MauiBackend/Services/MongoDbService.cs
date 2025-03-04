@@ -11,6 +11,7 @@ namespace MauiBackend.Services
         private readonly IMongoCollection<User> _usersCollection;
         private readonly IMongoCollection<TradeData> _tradeDataCollection;
         private readonly IMongoCollection<PnLData> _pnlDataCollection;
+        private readonly IMongoCollection<Season> _seasonsCollection;
 
         public MongoDbService(IConfiguration config)
         {
@@ -19,6 +20,7 @@ namespace MauiBackend.Services
             _usersCollection = database.GetCollection<User>("Users");
             _tradeDataCollection = database.GetCollection<TradeData>("TradeData");
             _pnlDataCollection = database.GetCollection<PnLData>("PnLData");
+            _seasonsCollection = database.GetCollection<Season>("Seasons");
         }
 
         public async Task<bool> IsUsernameTakenAsync(string username)
@@ -60,8 +62,24 @@ namespace MauiBackend.Services
         public async Task CreateUserAsync(User user)
         {
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            var pnl = new PnLData { UserId = user.Id };
 
             await _usersCollection.InsertOneAsync(user);
+            await _pnlDataCollection.InsertOneAsync(pnl);
+        }
+
+        public async Task CreateSeason(Season season) => 
+            await _seasonsCollection.InsertOneAsync(season);
+
+        public async Task<Season> GetCurrentSeason()
+        {
+            var now = DateTime.UtcNow; 
+            var filter = Builders<Season>.Filter.And(
+                Builders<Season>.Filter.Lte(s => s.StartDate, now), 
+                Builders<Season>.Filter.Gte(s => s.EndDate, now) 
+            );
+
+            return await _seasonsCollection.Find(filter).FirstOrDefaultAsync();
         }
     }
 }

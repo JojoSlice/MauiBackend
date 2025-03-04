@@ -10,6 +10,7 @@ namespace MauiBackend.Models
 
         [BsonRepresentation(BsonType.ObjectId)]
         public string UserId { get; set; } = string.Empty;
+        public string Season { get; set; } = string.Empty;
         public string Exchange { get; set; } = string.Empty;
 
         private string _ticker = string.Empty;
@@ -19,7 +20,7 @@ namespace MauiBackend.Models
             set => _ticker = value.ToUpper();
         }
         public double Price { get; set; }
-        public double Quantity { get; set; }
+        public double Points { get; set; }
         public bool IsLong { get; set; }
 
         public DateTime TradeDate { get; set; } = DateTime.UtcNow;
@@ -28,7 +29,7 @@ namespace MauiBackend.Models
         public double? StopLoss { get; set; }
         public double? TakeProfit { get; set; }
 
-        public double? PnL { get; set; }
+        public double? PnLPercent { get; set; }
         public double? ClosingPrice { get; set; }
 
     }

@@ -16,7 +16,7 @@ namespace MauiBackend.Controllers
             _pnlService = pnLService;
         }
 
-        [HttpPost("getpnl")]
+        [HttpPost("getsesonpnl")]
         public async Task<List<PnLData>> GetPnLDataAsync(string username)
         {
             Console.WriteLine("Getting pnl");
@@ -24,7 +24,7 @@ namespace MauiBackend.Controllers
             var user = await _mongoDbService.GetUserByUsernameAsync(username);
             Console.WriteLine($"Found {user.Username}");
 
-            var pnl = await _pnlService.UpdatePnLAsync(user.Id);
+            var pnl = await _pnlService.GetPnLAsync(user.Id);
 
             return pnl;
         }

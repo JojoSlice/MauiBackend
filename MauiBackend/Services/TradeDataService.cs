@@ -16,8 +16,6 @@ namespace MauiBackend.Services
         }
         public async Task AddTradeDataAsync(TradeData tradeData)
         {
-            var pnl = _pnlService.GetTodaysPnL(tradeData.UserId); //Tänk ut hur Points ska hanteras!
-
             await _tradeDataCollection.InsertOneAsync(tradeData);
         }
 
@@ -29,11 +27,11 @@ namespace MauiBackend.Services
             return trades.Where(t => t.IsOpen == false).ToList();
         }
 
-        public async Task<List<TradeData>> GetTradesBySeason(string userId, string season)
+        public async Task<List<TradeData>> GetTradesBySeason(string userId, string seasonId)
         {
             var filter = Builders<TradeData>.Filter.And(
                 Builders<TradeData>.Filter.Eq(td => td.UserId, userId),
-                Builders<TradeData>.Filter.Eq(td => td.Season, season)
+                Builders<TradeData>.Filter.Eq(td => td.SeasonId, seasonId)
                 );
 
             return await _tradeDataCollection.Find(filter).ToListAsync();
@@ -58,11 +56,11 @@ namespace MauiBackend.Services
                 double pnl = 0;
                 if (trade.IsLong)
                 {
-                    pnl = (exitPrice - trade.Price) * trade.Points;
+                    pnl = (exitPrice - trade.Price) * trade.PointsUsed;
                 }
                 else
                 {
-                    pnl = (trade.Price - exitPrice) * trade.Points;
+                    pnl = (trade.Price - exitPrice) * trade.PointsUsed;
                 }
 
                 var update = Builders<TradeData>.Update
@@ -120,13 +118,13 @@ namespace MauiBackend.Services
 
                 if (trade.IsLong)
                 {
-                    pnl = (currentPrice - trade.Price) * trade.Points;
+                    pnl = (currentPrice - trade.Price) * trade.PointsUsed;
                     takeProfitReached = currentPrice >= trade.TakeProfit;
                     stopLossReached = currentPrice <= trade.StopLoss;
                 }
                 else
                 {
-                    pnl = (trade.Price - currentPrice) * trade.Points;
+                    pnl = (trade.Price - currentPrice) * trade.PointsUsed;
                     takeProfitReached = currentPrice <= trade.TakeProfit;
                     stopLossReached = currentPrice >= trade.StopLoss;
                 }
@@ -135,11 +133,11 @@ namespace MauiBackend.Services
                 {
                     if (trade.IsLong)
                     {
-                        pnl = (currentPrice - trade.Price) * trade.Points;
+                        pnl = (currentPrice - trade.Price) * trade.PointsUsed;
                     }
                     else
                     {
-                        pnl = (trade.Price - currentPrice) * trade.Points;
+                        pnl = (trade.Price - currentPrice) * trade.PointsUsed;
                     }
 
                     var update = Builders<TradeData>.Update

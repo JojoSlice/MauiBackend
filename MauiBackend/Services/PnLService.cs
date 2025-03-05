@@ -24,63 +24,42 @@ namespace MauiBackend.Services
 
             var filter = Builders<PnLData>.Filter.And(
                 Builders<PnLData>.Filter.Eq(pnl => pnl.UserId, userId),
-                Builders<PnLData>.Filter.Gte(pnl => pnl.Date, season.StartDate),
-                Builders<PnLData>.Filter.Lte(pnl => pnl.Date, season.EndDate));
+                Builders<PnLData>.Filter.Eq(pnl => pnl.SeasonId, season.Id));
 
             return await _pnlDataCollection.Find(filter).ToListAsync();
         }
 
-        public async Task<PnLData> GetTodaysPnL(string userId)
+
+        public async Task<List<PnLData>> UpdatePnLBySeasonAsync(string id, string season)
         {
-            var today = DateTime.UtcNow.Date;
-            var tomorrow = today.AddDays(1);
+            var pnl = new List<PnLData>();
 
-            var filter = Builders<PnLData>.Filter.And(
-                Builders<PnLData>.Filter.Eq(pnl => pnl.UserId, userId),
-                Builders<PnLData>.Filter.Gte(pnl => pnl.Date, today),
-                Builders<PnLData>.Filter.Lt(pnl => pnl.Date, tomorrow));
+            var trades = await _tradeDataService.GetTradesBySeason(id, season);
 
-            var pnl = await _pnlDataCollection.Find(filter).FirstOrDefaultAsync();
-
-            if (pnl == null)
+            if (trades.Any())
             {
-                pnl = new PnLData { UserId = userId, Date = DateTime.UtcNow };
-                await _pnlDataCollection.InsertOneAsync(pnl);
+                var tradesByDate = trades.GroupBy(td => td.TradeDate.Date)
+                    .Select(g => new
+                    {
+                        Date = g.Key,
+                        TotalPnLPercent = g.Sum(t => t.PnLPercent)
+                    })
+                    .OrderBy(g => g.Date)
+                    .ToList();
+
+                pnl.Clear();
+                foreach (var tradDate in tradesByDate)
+                {
+                    var tradePnL = new PnLData();
+                    tradePnL.Date = tradDate.Date;
+                    tradePnL.PnLPercent = tradDate.TotalPnLPercent.Value;
+
+                    pnl.Add(tradePnL);
+                }
             }
 
             return pnl;
         }
-
-        //public async Task<List<PnLData>> UpdatePnLBySeasonAsync(string id, string season)
-        //{
-        //    var pnl = new List<PnLData>();
-            
-        //    var trades = await _tradeDataService.GetTradesBySeason(id, season);
-
-        //    if (trades.Any())
-        //    {
-        //        var tradesByDate = trades.GroupBy(td => td.TradeDate.Date)
-        //            .Select(g => new
-        //            {
-        //                Date = g.Key,
-        //                TotalPnLPercent = g.Sum(t => t.PnLPercent)
-        //            })
-        //            .OrderBy(g => g.Date)
-        //            .ToList();
-
-        //        pnl.Clear();
-        //        foreach (var tradDate in tradesByDate)
-        //        {
-        //            var tradePnL = new PnLData();
-        //            tradePnL.Date = tradDate.Date;
-        //            tradePnL.PnLPercent = tradDate.TotalPnLPercent.Value;
-
-        //            pnl.Add(tradePnL);
-        //        }
-        //    }
-
-        //    return pnl;
-        //}
 
     }
 }

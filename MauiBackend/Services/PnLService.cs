@@ -21,6 +21,16 @@ namespace MauiBackend.Services
         public async Task<List<PnLData>> GetPnLAsync(string userId)
         {
             var season = await _mongoDbService.GetCurrentSeason();
+            if (season == null)
+            {
+                season = new Season
+                {
+                    StartDate = DateTime.UtcNow.Date,
+                    Name = "Season 0",
+                    SeasonMessage = "Dev season"
+                };
+                await _mongoDbService.CreateSeason(season);
+            }
 
             var filter = Builders<PnLData>.Filter.And(
                 Builders<PnLData>.Filter.Eq(pnl => pnl.UserId, userId),

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Transactions;
+using MauiBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -12,13 +13,40 @@ namespace MauiBackend.Controllers
     [Route("api/stocks")]
     public class StockAPIController : Controller
     {
+        private readonly MongoDbService _mongoDbService;
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _apiKey = "curg10hr01qgoblekt90curg10hr01qgoblekt9g";
+
+        public StockAPIController(MongoDbService mongoDbService)
+        {
+            _mongoDbService = mongoDbService;
+        }
 
         [HttpGet("getassets")]
         public async Task<List<Models.Asset>> GetAssets()
         {
-
+            var assets = await _mongoDbService.GetAssets();
+            if (assets == null)
+            {
+                assets = new List<Models.Asset>
+                {
+                    new Models.Asset { Name = "Tesla", Ticker = "TSLA" },
+                    new Models.Asset { Name = "Apple", Ticker = "AAPL" },
+                    new Models.Asset { Name = "Microsoft", Ticker = "MSFT" },
+                    new Models.Asset { Name = "NIO", Ticker = "NIO" },
+                    new Models.Asset { Name = "AMC", Ticker = "AMC" },
+                    new Models.Asset { Name = "AMC Pref", Ticker = "APE" },
+                    new Models.Asset { Name = "NVIDIA", Ticker = "NVDA" },
+                    new Models.Asset { Name = "GameStop", Ticker = "GME" },
+                    new Models.Asset { Name = "Meta", Ticker = "META" },
+                    new Models.Asset { Name = "Amazon", Ticker = "AMZN" }
+                };
+                foreach(var asset in assets)
+                {
+                    await _mongoDbService.AddAsset(asset);
+                }
+            }
+            return assets;
         }
 
         [HttpGet("stockprice")]

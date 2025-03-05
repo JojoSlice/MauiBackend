@@ -15,12 +15,18 @@ namespace MauiBackend.Controllers
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _apiKey = "curg10hr01qgoblekt90curg10hr01qgoblekt9g";
 
+        [HttpGet("getassets")]
+        public async Task<List<Models.Asset>> GetAssets()
+        {
+
+        }
+
         [HttpGet("stockprice")]
-        public async Task<List<StockCandle>> GetStockData(string ticker, string period)
+        public async Task<List<StockCandle>> GetStockData(Models.Asset stock)
         {
             Console.WriteLine("GetStockData called");
 
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.api-ninjas.com/v1/stockpricehistorical?ticker={ticker}&period={period}");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.api-ninjas.com/v1/stockpricehistorical?ticker={stock.Ticker}&period={stock.Period}");
             request.Headers.Add("X-Api-Key", _apiKey);
             try
             {

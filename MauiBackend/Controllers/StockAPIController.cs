@@ -2,74 +2,70 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace MauiBackend.Controllers
 {
     [ApiController]
-    [Route("api/market")]
+    [Route("api/stocks")]
     public class StockAPIController : Controller
     {
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _apiKey = "curg10hr01qgoblekt90curg10hr01qgoblekt9g";
-        //private readonly IMemoryCache _cache;
-        //private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(10);
 
-        //public StockAPIController(IMemoryCache cache)
-        //{
-        //    _cache = cache;
-        //}
-
-        [HttpGet("status")]
-        public async Task<MarketStatus> GetMarketStatus()
+        [HttpGet("stockprice")]
+        public async Task<List<StockCandle>> GetStockData(string ticker, string period)
         {
-            Console.WriteLine("Api call made");
+            Console.WriteLine("GetStockData called");
 
-            //if (_cache.TryGetValue("MarketStatus", out MarketStatus cachedStatus))
-            //{
-            //    return cachedStatus;
-            //}
-
-            var url = $"https://finnhub.io/api/v1/stock/market-status?exchange=US&token={_apiKey}";
-
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.api-ninjas.com/v1/stockpricehistorical?ticker={ticker}&period={period}");
+            request.Headers.Add("X-Api-Key", _apiKey);
             try
             {
-                var response = await _httpClient.GetAsync(url);
+                var response = await _httpClient.SendAsync(request);
 
-                if (response.IsSuccessStatusCode)
+                if(response.IsSuccessStatusCode)
                 {
                     var jsonResponse = await response.Content.ReadAsStringAsync();
-                    var marketStatus = JsonSerializer.Deserialize<MarketStatus>(jsonResponse);
-                    if (marketStatus != null)
+                    var stockdata = JsonSerializer.Deserialize<List<StockCandle>>(jsonResponse);
+                    if(stockdata != null)
                     {
-                        //_cache.Set("MarketStatus", marketStatus, _cacheDuration);
-                        return marketStatus;
+                        Console.WriteLine("data hämtad, GetStockData slut");
+                        return stockdata;
                     }
                     else
-                        throw new Exception("MarketStatus was not found");
+                    {
+                        throw new Exception("stockdata not found");
+                    }
                 }
                 else
                 {
-                    throw new Exception("Failed to fetch data from Finnhub API");
+                    throw new Exception("failed to get stockdata from api ninjas");
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine($"Error {ex.Message}");
                 return null;
             }
         }
-        public class MarketStatus
-        {
-            [JsonPropertyName("exchange")]
-            public string Exchange { get; set; }
-            [JsonPropertyName("holiday")]
-            public string? Holiday { get; set; }
-            [JsonPropertyName("isOpen")]
-            public bool IsOpen { get; set; }
-            [JsonPropertyName("session")]
-            public string? CurrentSession { get; set; }
-        }
+    }
+
+    public class StockCandle
+    {
+        [JsonPropertyName("open")]
+        public double Open { get; set; }
+        [JsonPropertyName("low")]
+        public double Low { get; set; }
+        [JsonPropertyName("high")]
+        public double High { get; set; }
+        [JsonPropertyName("close")]
+        public double Close { get; set; }
+        [JsonPropertyName("volume")]
+        public double Volume { get; set; }
+        [JsonPropertyName("time")]
+        public string Time { get; set; }
     }
 }

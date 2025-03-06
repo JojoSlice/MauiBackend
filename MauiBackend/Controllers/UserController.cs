@@ -3,6 +3,7 @@ using MauiBackend.Models;
 using MauiBackend.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -23,6 +24,12 @@ public class UserController : ControllerBase
     public async Task<ActionResult<List<User>>> GetUsers()
     {
         return await _mongoDbService.GetUsersAsync();
+    }
+
+    [HttpPost("getuser")]
+    public async Task<User> GetUser(string username)
+    {
+        return await _mongoDbService.GetUserByUsernameAsync(username);
     }
 
     [HttpPost("register")]

@@ -16,7 +16,7 @@ namespace MauiBackend.Controllers
             _pnlService = pnLService;
         }
 
-        [HttpPost("getsesonpnl")]
+        [HttpPost("getseasonpnl")]
         public async Task<List<PnLData>> GetPnLDataAsync(string username)
         {
             Console.WriteLine("Getting pnl");

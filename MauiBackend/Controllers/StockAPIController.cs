@@ -25,6 +25,7 @@ namespace MauiBackend.Controllers
         [HttpGet("getassets")]
         public async Task<List<Models.Asset>> GetAssets()
         {
+            Console.WriteLine("GetAsset startar");
             var assets = await _mongoDbService.GetAssets();
             if (assets == null)
             {
@@ -46,6 +47,7 @@ namespace MauiBackend.Controllers
                     await _mongoDbService.AddAsset(asset);
                 }
             }
+            Console.WriteLine("GetAsset slut");
             return assets;
         }
 

@@ -20,6 +20,7 @@ namespace MauiBackend.Services
 
         public async Task<List<PnLData>> GetPnLAsync(string userId)
         {
+            Console.WriteLine("PnL hämtas");
             var season = await _mongoDbService.GetCurrentSeason();
             if (season == null)
             {
@@ -36,7 +37,23 @@ namespace MauiBackend.Services
                 Builders<PnLData>.Filter.Eq(pnl => pnl.UserId, userId),
                 Builders<PnLData>.Filter.Eq(pnl => pnl.SeasonId, season.Id));
 
-            return await _pnlDataCollection.Find(filter).ToListAsync();
+            List<PnLData> pnls = new List<PnLData>();
+            pnls = await _pnlDataCollection.Find(filter).ToListAsync();
+
+            if (pnls.Count == 0)
+            {
+                var newPnl = new PnLData
+                {
+                    UserId = userId,
+                    SeasonId = season.Id,
+                    Date = DateTime.UtcNow
+                };
+
+                pnls.Add(newPnl);
+            }
+
+            Console.WriteLine("GetPnL slut");
+            return pnls;
         }
 
 

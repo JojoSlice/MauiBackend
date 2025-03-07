@@ -4,8 +4,8 @@ using MauiBackend.Models;
 namespace MauiBackend.Controllers
 {
 
-    [ApiController]
     [Route("api/pnl")]
+    [ApiController]
     public class PnLController : ControllerBase
     {
         private readonly MongoDbService _mongoDbService;
@@ -16,8 +16,8 @@ namespace MauiBackend.Controllers
             _pnlService = pnLService;
         }
 
-        [HttpPost("getseasonpnl")]
-        public async Task<List<PnLData>> GetPnLDataAsync(string username)
+        [HttpGet("get")]
+        public async Task<List<PnLData>> GetPnLDataAsync([FromQuery]string username)
         {
             Console.WriteLine("Getting pnl");
 

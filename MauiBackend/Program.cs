@@ -31,6 +31,10 @@ namespace MauiBackend
 
             builder.Services.AddControllers();
             builder.Services.AddSingleton<MongoDbService>();
+            builder.Services.AddSingleton<PnLService>();
+            builder.Services.AddSingleton<TradeDataService>();
+
+
 
             var app = builder.Build();
 

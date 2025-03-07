@@ -6,17 +6,21 @@ namespace MauiBackend.Services
     public class PnLService
     {
         private readonly IMongoCollection<PnLData> _pnlDataCollection;
-        private readonly TradeDataService _tradeDataService;
+        private readonly IServiceProvider _serviceProvider;
         private readonly MongoDbService _mongoDbService;
-        public PnLService(IConfiguration config, MongoDbService mongoDbService, TradeDataService tradeDataService)
+        private TradeDataService? _tradeDataService;
+        public PnLService(IConfiguration config, MongoDbService mongoDbService, IServiceProvider serviceProvider)
         {
 
             var client = new MongoClient(config["MongoDB:ConnectionString"]);
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _pnlDataCollection = database.GetCollection<PnLData>("PnLData");
-            _tradeDataService = tradeDataService;
             _mongoDbService = mongoDbService;
+            _serviceProvider = serviceProvider;
         }
+
+        private TradeDataService TradeDataService => 
+            _tradeDataService ??= _serviceProvider.GetRequiredService<TradeDataService>();
 
         public async Task<List<PnLData>> GetPnLAsync(string userId)
         {
@@ -79,7 +83,7 @@ namespace MauiBackend.Services
                 {
                     var tradePnL = new PnLData();
                     tradePnL.Date = tradDate.Date;
-                    tradePnL.PnLPercent = tradDate.TotalPnLPercent.Value;
+                    tradePnL.PnL = tradDate.TotalPnLPercent.Value;
 
                     pnl.Add(tradePnL);
                 }

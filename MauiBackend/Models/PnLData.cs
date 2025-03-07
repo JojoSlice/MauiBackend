@@ -9,7 +9,7 @@ namespace MauiBackend.Models
         public string UserId { get; set; } = string.Empty;
         [BsonRepresentation(BsonType.ObjectId)]
         public string SeasonId { get; set; }
-        public double PnLPercent { get; set; } = 0;
+        public double PnL { get; set; } = 0;
         public DateTime Date { get; set; }
     }
 }

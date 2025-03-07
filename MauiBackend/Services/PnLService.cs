@@ -31,6 +31,7 @@ namespace MauiBackend.Services
                 season = new Season
                 {
                     StartDate = DateTime.UtcNow.Date,
+                    EndDate = DateTime.UtcNow.Date.AddDays(30),
                     Name = "Season 0",
                     SeasonMessage = "Dev season"
                 };
@@ -54,6 +55,7 @@ namespace MauiBackend.Services
                 };
 
                 pnls.Add(newPnl);
+                await _pnlDataCollection.InsertOneAsync(newPnl);
             }
 
             Console.WriteLine("GetPnL slut");

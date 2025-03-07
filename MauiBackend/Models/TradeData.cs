@@ -12,7 +12,6 @@ namespace MauiBackend.Models
         public string UserId { get; set; } = string.Empty;
         [BsonRepresentation(BsonType.ObjectId)]
         public string SeasonId { get; set; } = string.Empty;
-        public string Exchange { get; set; } = string.Empty;
 
         private string _ticker = string.Empty;
         public string Ticker

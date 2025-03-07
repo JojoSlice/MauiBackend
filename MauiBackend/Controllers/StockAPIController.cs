@@ -15,7 +15,7 @@ namespace MauiBackend.Controllers
     {
         private readonly MongoDbService _mongoDbService;
         private readonly HttpClient _httpClient = new HttpClient();
-        private readonly string _apiKey = "curg10hr01qgoblekt90curg10hr01qgoblekt9g";
+        private readonly string _apiKey = "dlXd5o50tlssBxnGjwBwRg==aM7Kx2NTPEY1tgwU";
 
         public StockAPIController(MongoDbService mongoDbService)
         {
@@ -27,7 +27,7 @@ namespace MauiBackend.Controllers
         {
             Console.WriteLine("GetAsset startar");
             var assets = await _mongoDbService.GetAssets();
-            if (assets == null)
+            if (assets.Count == 0)
             {
                 assets = new List<Models.Asset>
                 {
@@ -42,49 +42,93 @@ namespace MauiBackend.Controllers
                     new Models.Asset { Name = "Meta", Ticker = "META" },
                     new Models.Asset { Name = "Amazon", Ticker = "AMZN" }
                 };
-                foreach(var asset in assets)
-                {
-                    await _mongoDbService.AddAsset(asset);
-                }
+
+                await _mongoDbService.AddManyAssets(assets);
             }
             Console.WriteLine("GetAsset slut");
             return assets;
         }
 
-        [HttpGet("stockprice")]
-        public async Task<List<StockCandle>> GetStockData(Models.Asset stock)
+        [HttpGet("price")]
+        public async Task<Models.Stock> GetAssetPrice([FromQuery] string ticker)
         {
-            Console.WriteLine("GetStockData called");
+            Console.WriteLine($"GetAssetPrice called, ticker: {ticker}");
 
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.api-ninjas.com/v1/stockpricehistorical?ticker={stock.Ticker}&period={stock.Period}");
-            request.Headers.Add("X-Api-Key", _apiKey);
-            try
+            var url = $"https://api.api-ninjas.com/v1/stockprice?ticker={ticker}";
+
+            using (_httpClient)
             {
-                var response = await _httpClient.SendAsync(request);
-
-                if(response.IsSuccessStatusCode)
+                try
                 {
-                    var jsonResponse = await response.Content.ReadAsStringAsync();
-                    var stockdata = JsonSerializer.Deserialize<List<StockCandle>>(jsonResponse);
-                    if(stockdata != null)
+                    var response = await _httpClient.GetAsync(url);
+                    
+                    if (response.IsSuccessStatusCode)
                     {
-                        Console.WriteLine("data hämtad, GetStockData slut");
-                        return stockdata;
+                        var jsonResponse = await response.Content.ReadAsStringAsync();
+                        var stock = JsonSerializer.Deserialize<Models.Stock>(jsonResponse);
+                        if (stock != null)
+                        {
+                            Console.WriteLine("data hämtad, GetAssetPrice slut");
+                            return stock;
+                        }
+                        else
+                        {
+                            throw new Exception("stock data was null");
+                        }
                     }
                     else
                     {
-                        throw new Exception("stockdata not found");
+                        throw new Exception("faild api call");
                     }
                 }
-                else
+                catch(Exception ex)
                 {
-                    throw new Exception("failed to get stockdata from api ninjas");
+                    Console.WriteLine(ex.Message);
+                    return new Models.Stock();
                 }
             }
-            catch(Exception ex)
+        }
+
+        [HttpGet("stockprice")]
+        public async Task<List<StockCandle>> GetStockData([FromQuery] string ticker, [FromQuery] string period)
+        {
+            Console.WriteLine($"GetStockData called, ticker: {ticker}, period: {period}");
+
+            var url = $"https://api.api-ninjas.com/v1/stockpricehistorical?ticker={ticker}";
+
+            using (_httpClient)
             {
-                Console.WriteLine($"Error {ex.Message}");
-                return null;
+                _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _apiKey);
+                try
+                {
+                    var response = await _httpClient.GetAsync(url);
+
+                    Console.WriteLine(response.ToString());
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonResponse = await response.Content.ReadAsStringAsync();
+                        var stockdata = JsonSerializer.Deserialize<List<StockCandle>>(jsonResponse);
+                        if (stockdata != null)
+                        {
+                            Console.WriteLine("data hämtad, GetStockData slut");
+                            return stockdata;
+                        }
+                        else
+                        {
+                            throw new Exception("stockdata not found");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("failed to get stockdata from api ninjas");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error {ex.Message}");
+                    return new List<StockCandle>();
+                }
             }
         }
     }
@@ -102,6 +146,6 @@ namespace MauiBackend.Controllers
         [JsonPropertyName("volume")]
         public double Volume { get; set; }
         [JsonPropertyName("time")]
-        public string Time { get; set; }
+        public long Time { get; set; }
     }
 }

@@ -19,6 +19,12 @@ namespace MauiBackend.Services
             await _tradeDataCollection.InsertOneAsync(tradeData);
         }
 
+        public async Task<TradeData> GetTradeById(string id)
+        {
+            return await _tradeDataCollection.Find(trade => trade.Id == id).FirstOrDefaultAsync();
+        }
+
+
         public async Task<List<TradeData>> GetClosedTradesByUserIdAsync(string userId)
         {
             var filter = Builders<TradeData>.Filter.Eq(td => td.UserId, userId);

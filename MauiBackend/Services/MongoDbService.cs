@@ -30,6 +30,9 @@ namespace MauiBackend.Services
 
         public async Task AddAsset(Models.Asset asset) => 
             await _assetsCollection.InsertOneAsync(asset);
+
+        public async Task AddManyAssets(List<Models.Asset> assets) =>
+            await _assetsCollection.InsertManyAsync(assets);
         public async Task<bool> IsUsernameTakenAsync(string username)
         {
             var existingUser = await _usersCollection.Find(u => u.Username == username).FirstOrDefaultAsync();

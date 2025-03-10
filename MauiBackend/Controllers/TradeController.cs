@@ -14,7 +14,7 @@ namespace MauiBackend.Controllers
             _tradeDataService = tradeDataService;
         }
 
-        [HttpPost("newTrade")]
+        [HttpPost("newtrade")]
         public async Task<IActionResult> CreateTrade([FromBody] Models.TradeData trade)
         {
             if (trade == null)

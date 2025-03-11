@@ -26,9 +26,10 @@ public class UserController : ControllerBase
         return await _mongoDbService.GetUsersAsync();
     }
 
-    [HttpPost("getuser")]
-    public async Task<User> GetUser(string username)
+    [HttpGet("getuser")]
+    public async Task<User> GetUser([FromQuery] string username)
     {
+        Console.WriteLine("GetUser anropad");
         return await _mongoDbService.GetUserByUsernameAsync(username);
     }
 

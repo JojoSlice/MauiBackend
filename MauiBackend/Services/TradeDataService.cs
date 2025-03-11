@@ -6,13 +6,11 @@ namespace MauiBackend.Services
     public class TradeDataService
     {
         private readonly IMongoCollection<TradeData> _tradeDataCollection;
-        private readonly PnLService _pnlService;
         public TradeDataService(IConfiguration config, MongoDbService mongoDbService, PnLService pnLService)
         {
             var client = new MongoClient(config["MongoDB:ConnectionString"]);
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _tradeDataCollection = database.GetCollection<TradeData>("TradeData");
-            _pnlService = pnLService;
         }
         public async Task AddTradeDataAsync(TradeData tradeData)
         {

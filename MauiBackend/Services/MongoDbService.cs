@@ -9,8 +9,6 @@ namespace MauiBackend.Services
     public class MongoDbService
     {
         private readonly IMongoCollection<User> _usersCollection;
-        private readonly IMongoCollection<TradeData> _tradeDataCollection;
-        private readonly IMongoCollection<PnLData> _pnlDataCollection;
         private readonly IMongoCollection<Season> _seasonsCollection;
         private readonly IMongoCollection<Asset> _assetsCollection;
 
@@ -19,8 +17,6 @@ namespace MauiBackend.Services
             var client = new MongoClient(config["MongoDB:ConnectionString"]);
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _usersCollection = database.GetCollection<User>("Users");
-            _tradeDataCollection = database.GetCollection<TradeData>("TradeData");
-            _pnlDataCollection = database.GetCollection<PnLData>("PnLData");
             _seasonsCollection = database.GetCollection<Season>("Seasons");
             _assetsCollection = database.GetCollection<Asset>("Assets");
         }
@@ -72,10 +68,8 @@ namespace MauiBackend.Services
         public async Task CreateUserAsync(User user)
         {
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-            var pnl = new PnLData { UserId = user.Id };
 
             await _usersCollection.InsertOneAsync(user);
-            await _pnlDataCollection.InsertOneAsync(pnl);
         }
 
         public async Task CreateSeason(Season season) => 

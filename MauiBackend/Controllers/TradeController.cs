@@ -46,6 +46,10 @@ namespace MauiBackend.Controllers
                 return BadRequest("Invalid tradeData");
             else
             {
+                if (string.IsNullOrWhiteSpace(trade.Id))
+                {
+                    trade.Id = null;
+                }
                 await _tradeDataService.AddTradeDataAsync(trade);
                 var user = await _mongoDbService.GetUserByIdAsync(trade.UserId);
                 user.Points = user.Points - trade.PointsUsed;

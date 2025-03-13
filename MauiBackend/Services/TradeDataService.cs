@@ -50,27 +50,30 @@ namespace MauiBackend.Services
             return await _tradeDataCollection.Find(filter).ToListAsync();
         }
 
-        public async Task CloseTradeAsync(string tradeId, double exitPrice)
+        public async Task CloseTradeAsync(TradeData closeTrade)
         {
-            var filter = Builders<TradeData>.Filter.Eq(td => td.Id, tradeId);
+            var filter = Builders<TradeData>.Filter.Eq(td => td.Id, closeTrade.Id);
             var trade = await _tradeDataCollection.Find(filter).FirstOrDefaultAsync();
 
             if (trade != null && trade.IsOpen)
             {
                 double pnl = 0;
-                if (trade.IsLong)
+                if (closeTrade.ClosingPrice != null)
                 {
-                    pnl = (exitPrice - trade.Price) * trade.PointsUsed;
-                }
-                else
-                {
-                    pnl = (trade.Price - exitPrice) * trade.PointsUsed;
+                    if (trade.IsLong)
+                    {
+                        pnl = (closeTrade.ClosingPrice.Value - trade.Price) * trade.PointsUsed;
+                    }
+                    else
+                    {
+                        pnl = (trade.Price - closeTrade.ClosingPrice.Value) * trade.PointsUsed;
+                    }
                 }
 
                 var update = Builders<TradeData>.Update
                     .Set(td => td.IsOpen, false)
                     .Set(td => td.PnLPercent, pnl)
-                    .Set(td => td.ClosingPrice, exitPrice);
+                    .Set(td => td.ClosingPrice, closeTrade.ClosingPrice);
 
                 await _tradeDataCollection.UpdateOneAsync(filter, update);
             }

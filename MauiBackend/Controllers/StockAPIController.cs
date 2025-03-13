@@ -50,89 +50,105 @@ namespace MauiBackend.Controllers
         }
 
         [HttpGet("price")]
-        public async Task<Models.Stock> GetAssetPrice([FromQuery] string ticker)
+        public async Task<IActionResult> GetAssetPrice([FromQuery] string ticker)
         {
             Console.WriteLine($"GetAssetPrice called, ticker: {ticker}");
 
+            if (string.IsNullOrWhiteSpace(ticker))
+            {
+                return BadRequest("Ticker is required.");
+            }
+
             var url = $"https://api.api-ninjas.com/v1/stockprice?ticker={ticker}";
 
-            using (_httpClient)
+            try
             {
-                try
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _apiKey);
+
+                var response = await _httpClient.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    var response = await _httpClient.GetAsync(url);
-                    
-                    if (response.IsSuccessStatusCode)
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Response: {jsonResponse}");
+
+                    var stock = JsonSerializer.Deserialize<Models.Stock>(jsonResponse);
+                    if (stock != null)
                     {
-                        var jsonResponse = await response.Content.ReadAsStringAsync();
-                        var stock = JsonSerializer.Deserialize<Models.Stock>(jsonResponse);
-                        if (stock != null)
-                        {
-                            Console.WriteLine("data hämtad, GetAssetPrice slut");
-                            return stock;
-                        }
-                        else
-                        {
-                            throw new Exception("stock data was null");
-                        }
+                        Console.WriteLine("Data hämtad, GetAssetPrice slut");
+                        return Ok(stock);
                     }
                     else
                     {
-                        throw new Exception("faild api call");
+                        return StatusCode(500, "Stock data was null.");
                     }
                 }
-                catch(Exception ex)
+                else
                 {
-                    Console.WriteLine(ex.Message);
-                    return new Models.Stock();
+                    var errorResponse = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Error: {response.StatusCode} - {errorResponse}");
+                    return StatusCode((int)response.StatusCode, errorResponse);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
 
+
         [HttpGet("stockprice")]
-        public async Task<List<StockCandle>> GetStockData([FromQuery] string ticker, [FromQuery] string period)
+        public async Task<IActionResult> GetStockData([FromQuery] string ticker, [FromQuery] string period)
         {
             Console.WriteLine($"GetStockData called, ticker: {ticker}, period: {period}");
 
+            if (string.IsNullOrWhiteSpace(ticker))
+            {
+                return BadRequest("Ticker is required.");
+            }
+
             var url = $"https://api.api-ninjas.com/v1/stockpricehistorical?ticker={ticker}";
 
-            using (_httpClient)
+            try
             {
+                _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("X-Api-Key", _apiKey);
-                try
+
+                var response = await _httpClient.GetAsync(url);
+                Console.WriteLine($"API Response: {response.StatusCode}");
+
+                if (response.IsSuccessStatusCode)
                 {
-                    var response = await _httpClient.GetAsync(url);
+                    var jsonResponse = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Data: {jsonResponse}");
 
-                    Console.WriteLine(response.ToString());
-
-                    if (response.IsSuccessStatusCode)
+                    var stockData = JsonSerializer.Deserialize<List<StockCandle>>(jsonResponse);
+                    if (stockData != null)
                     {
-                        var jsonResponse = await response.Content.ReadAsStringAsync();
-                        var stockdata = JsonSerializer.Deserialize<List<StockCandle>>(jsonResponse);
-                        if (stockdata != null)
-                        {
-                            Console.WriteLine("data hämtad, GetStockData slut");
-                            return stockdata;
-                        }
-                        else
-                        {
-                            throw new Exception("stockdata not found");
-                        }
+                        Console.WriteLine("Data hämtad, GetStockData slut");
+                        return Ok(stockData);
                     }
                     else
                     {
-                        throw new Exception("failed to get stockdata from api ninjas");
+                        return StatusCode(500, "Stock data was null.");
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Error {ex.Message}");
-                    return new List<StockCandle>();
+                    var errorResponse = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Error: {response.StatusCode} - {errorResponse}");
+                    return StatusCode((int)response.StatusCode, errorResponse);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }
-
     public class StockCandle
     {
         [JsonPropertyName("open")]

@@ -13,13 +13,15 @@ namespace MauiBackend.Controllers
     [Route("api/stocks")]
     public class StockAPIController : Controller
     {
+        private readonly TradeDataService _tradeDataService;
         private readonly MongoDbService _mongoDbService;
         private readonly HttpClient _httpClient = new HttpClient();
         private readonly string _apiKey = "dlXd5o50tlssBxnGjwBwRg==aM7Kx2NTPEY1tgwU";
 
-        public StockAPIController(MongoDbService mongoDbService)
+        public StockAPIController(MongoDbService mongoDbService, TradeDataService tradeDataService)
         {
             _mongoDbService = mongoDbService;
+            _tradeDataService = tradeDataService;
         }
 
         [HttpGet("getassets")]
@@ -77,6 +79,7 @@ namespace MauiBackend.Controllers
                     if (stock != null)
                     {
                         Console.WriteLine("Data hämtad, GetAssetPrice slut");
+                        await _tradeDataService.UpdateTradeAsync(stock.Price, stock.Ticker);
                         return Ok(stock);
                     }
                     else

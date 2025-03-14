@@ -109,57 +109,59 @@ namespace MauiBackend.Services
             }
         }
 
-        public async Task UpdateTradeAsync(string userId, double currentPrice)
+        public async Task UpdateTradeAsync(double currentPrice, string ticker)
         {
-            var filter = Builders<TradeData>.Filter.And(
-                Builders<TradeData>.Filter.Eq(td => td.UserId, userId),
-                Builders<TradeData>.Filter.Eq(td => td.IsOpen, true));
-
+            var filter = Builders<TradeData>.Filter.Eq(td => td.Ticker, ticker);
             var trades = await _tradeDataCollection.Find(filter).ToListAsync();
 
-            foreach(var trade in trades)
+            if (trades.Count > 0)
             {
-                double pnl = 0;
-                bool takeProfitReached = false;
-                bool stopLossReached = false;
 
-                if (trade.IsLong)
+                foreach (var trade in trades)
                 {
-                    pnl = (currentPrice - trade.Price) * trade.PointsUsed;
-                    takeProfitReached = currentPrice >= trade.TakeProfit;
-                    stopLossReached = currentPrice <= trade.StopLoss;
-                }
-                else
-                {
-                    pnl = (trade.Price - currentPrice) * trade.PointsUsed;
-                    takeProfitReached = currentPrice <= trade.TakeProfit;
-                    stopLossReached = currentPrice >= trade.StopLoss;
-                }
 
-                if (takeProfitReached || stopLossReached)
-                {
+                    double pnl = 0;
+                    bool takeProfitReached = false;
+                    bool stopLossReached = false;
+
                     if (trade.IsLong)
                     {
                         pnl = (currentPrice - trade.Price) * trade.PointsUsed;
+                        takeProfitReached = currentPrice >= trade.TakeProfit;
+                        stopLossReached = currentPrice <= trade.StopLoss;
                     }
                     else
                     {
                         pnl = (trade.Price - currentPrice) * trade.PointsUsed;
+                        takeProfitReached = currentPrice <= trade.TakeProfit;
+                        stopLossReached = currentPrice >= trade.StopLoss;
                     }
 
-                    var update = Builders<TradeData>.Update
-                    .Set(td => td.IsOpen, false)
-                    .Set(td => td.PnLPercent, trade.PnLPercent);
+                    if (takeProfitReached || stopLossReached)
+                    {
+                        if (trade.IsLong)
+                        {
+                            pnl = (trade.StopLoss.Value - trade.Price) * trade.PointsUsed;
+                        }
+                        else
+                        {
+                            pnl = (trade.Price - trade.StopLoss.Value) * trade.PointsUsed;
+                        }
 
-                    await _tradeDataCollection.UpdateOneAsync(
-                        Builders<TradeData>.Filter.Eq(td => td.Id, trade.Id),
-                        update);
-                }
-                else
-                {
-                    var update = Builders<TradeData>.Update.Set(td => td.PnLPercent, pnl);
-                    await _tradeDataCollection.UpdateOneAsync(
-                        Builders<TradeData>.Filter.Eq(td => td.Id, trade.Id), update);
+                        var update = Builders<TradeData>.Update
+                        .Set(td => td.IsOpen, false)
+                        .Set(td => td.PnLPercent, trade.PnLPercent);
+
+                        await _tradeDataCollection.UpdateOneAsync(
+                            Builders<TradeData>.Filter.Eq(td => td.Id, trade.Id),
+                            update);
+                    }
+                    else
+                    {
+                        var update = Builders<TradeData>.Update.Set(td => td.PnLPercent, pnl);
+                        await _tradeDataCollection.UpdateOneAsync(
+                            Builders<TradeData>.Filter.Eq(td => td.Id, trade.Id), update);
+                    }
                 }
             }
         }

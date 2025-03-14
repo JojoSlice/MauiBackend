@@ -1,6 +1,7 @@
 ﻿using MauiBackend.Models;
 using MauiBackend.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace MauiBackend.Controllers
 {
@@ -10,6 +11,9 @@ namespace MauiBackend.Controllers
     {
         private readonly TradeDataService _tradeDataService;
         private readonly MongoDbService _mongoDbService;
+        private readonly HttpClient _httpClient = new HttpClient();
+        private readonly string _apiKey = "dlXd5o50tlssBxnGjwBwRg==aM7Kx2NTPEY1tgwU";
+
         public TradeController(TradeDataService tradeDataService, MongoDbService mongoDbService)
         {
             _tradeDataService = tradeDataService;
@@ -70,6 +74,7 @@ namespace MauiBackend.Controllers
             }
             return trade;
         }
+
 
     }
 }

@@ -6,21 +6,17 @@ namespace MauiBackend.Services
     public class PnLService
     {
         private readonly IMongoCollection<PnLData> _pnlDataCollection;
-        private readonly IServiceProvider _serviceProvider;
         private readonly MongoDbService _mongoDbService;
-        private TradeDataService? _tradeDataService;
-        public PnLService(IConfiguration config, MongoDbService mongoDbService, IServiceProvider serviceProvider)
+        private readonly TradeDataService _tradeDataService;
+        public PnLService(IConfiguration config, MongoDbService mongoDbService, TradeDataService tradeDataService)
         {
 
             var client = new MongoClient(config["MongoDB:ConnectionString"]);
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _pnlDataCollection = database.GetCollection<PnLData>("PnLData");
             _mongoDbService = mongoDbService;
-            _serviceProvider = serviceProvider;
+            _tradeDataService = tradeDataService;
         }
-
-        private TradeDataService TradeDataService => 
-            _tradeDataService ??= _serviceProvider.GetRequiredService<TradeDataService>();
 
         public async Task<List<PnLData>> GetPnLAsync(string userId)
         {
@@ -42,7 +38,9 @@ namespace MauiBackend.Services
                 Builders<PnLData>.Filter.Eq(pnl => pnl.UserId, userId),
                 Builders<PnLData>.Filter.Eq(pnl => pnl.SeasonId, season.Id));
 
-            List<PnLData> pnls = new List<PnLData>();
+            List<PnLData> pnls = new();
+            await UpdatePnLAsync(userId);
+
             pnls = await _pnlDataCollection.Find(filter).ToListAsync();
 
             if (pnls.Count == 0)
@@ -63,16 +61,15 @@ namespace MauiBackend.Services
         }
 
 
-        public async Task<List<PnLData>> UpdatePnLBySeasonAsync(string id, string season)
+        public async Task UpdatePnLAsync(string id)
         {
             var pnl = new List<PnLData>();
 
-            var allTrades = await _tradeDataService.GetTrades(id);
-            var trades = allTrades.Where(td => td.SeasonId == season).ToList();
+            var allTrades = await _tradeDataService.GetClosedTradesByUserIdAsync(id);
 
-            if (trades.Any())
+            if (allTrades.Any())
             {
-                var tradesByDate = trades.GroupBy(td => td.TradeDate.Date)
+                var tradesByDate = allTrades.GroupBy(td => td.TradeDate.Date)
                     .Select(g => new
                     {
                         Date = g.Key,
@@ -81,18 +78,25 @@ namespace MauiBackend.Services
                     .OrderBy(g => g.Date)
                     .ToList();
 
-                pnl.Clear();
                 foreach (var tradDate in tradesByDate)
                 {
-                    var tradePnL = new PnLData();
-                    tradePnL.Date = tradDate.Date;
-                    tradePnL.PnL = tradDate.TotalPnLPercent.Value;
-
-                    pnl.Add(tradePnL);
+                    pnl.Add(new PnLData
+                    {
+                        UserId = id,
+                        Date = tradDate.Date,
+                        PnL = tradDate.TotalPnLPercent ?? 0
+                    });
                 }
             }
 
-            return pnl;
+            var filter = Builders<PnLData>.Filter.Eq(p => p.UserId, id);
+
+
+            if (pnl.Any())
+            {
+                await _pnlDataCollection.DeleteManyAsync(filter);
+                await _pnlDataCollection.InsertManyAsync(pnl);
+            }
         }
 
     }

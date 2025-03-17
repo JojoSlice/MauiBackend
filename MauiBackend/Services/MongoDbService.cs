@@ -11,6 +11,7 @@ namespace MauiBackend.Services
         private readonly IMongoCollection<User> _usersCollection;
         private readonly IMongoCollection<Season> _seasonsCollection;
         private readonly IMongoCollection<Asset> _assetsCollection;
+        private readonly IMongoCollection<TradeData> _tradeDataCollection;
 
         public MongoDbService(IConfiguration config)
         {
@@ -19,8 +20,13 @@ namespace MauiBackend.Services
             _usersCollection = database.GetCollection<User>("Users");
             _seasonsCollection = database.GetCollection<Season>("Seasons");
             _assetsCollection = database.GetCollection<Asset>("Assets");
+            _tradeDataCollection = database.GetCollection<TradeData>("TradeData");
         }
 
+        public IMongoCollection<TradeData> GetTradeDataCollection()
+        {
+            return _tradeDataCollection;
+        }
         public async Task<List<Asset>> GetAssets() =>
             await _assetsCollection.Find(asset => true).ToListAsync();
 

@@ -31,12 +31,9 @@ namespace MauiBackend.Services
             return trades.Where(t => t.IsOpen == false).ToList();
         }
 
-        public async Task<List<TradeData>> GetTradesBySeason(string userId, string seasonId)
+        public async Task<List<TradeData>> GetTrades(string userId)
         {
-            var filter = Builders<TradeData>.Filter.And(
-                Builders<TradeData>.Filter.Eq(td => td.UserId, userId),
-                Builders<TradeData>.Filter.Eq(td => td.SeasonId, seasonId)
-                );
+            var filter = Builders<TradeData>.Filter.Eq(td => td.UserId, userId);
 
             return await _tradeDataCollection.Find(filter).ToListAsync();
         }

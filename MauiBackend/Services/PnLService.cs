@@ -67,7 +67,8 @@ namespace MauiBackend.Services
         {
             var pnl = new List<PnLData>();
 
-            var trades = await _tradeDataService.GetTradesBySeason(id, season);
+            var allTrades = await _tradeDataService.GetTrades(id);
+            var trades = allTrades.Where(td => td.SeasonId == season).ToList();
 
             if (trades.Any())
             {

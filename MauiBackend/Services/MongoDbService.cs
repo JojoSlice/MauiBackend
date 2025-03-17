@@ -89,10 +89,13 @@ namespace MauiBackend.Services
             var now = DateTime.UtcNow; 
             var filter = Builders<Season>.Filter.And(
                 Builders<Season>.Filter.Lte(s => s.StartDate, now), 
-                Builders<Season>.Filter.Gte(s => s.EndDate, now) 
-            );
+                Builders<Season>.Filter.Or(
+                Builders<Season>.Filter.Gte(s => s.EndDate, now),
+                Builders<Season>.Filter.Eq(s => s.EndDate, null)));
 
-            return await _seasonsCollection.Find(filter).FirstOrDefaultAsync();
+            var season = await _seasonsCollection.Find(filter).FirstOrDefaultAsync();
+
+            return season;
         }
     }
 }

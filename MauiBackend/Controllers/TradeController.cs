@@ -33,13 +33,11 @@ namespace MauiBackend.Controllers
             return NoContent();
         }
 
-        [HttpGet("tradeseasonalhistory")]
+        [HttpGet("tradehistory")]
         public async Task<List<TradeData>> GetSeasonalTradeHistory([FromQuery] string userId)
         {
             Console.WriteLine("TradeHistory start");
-            var season = await _mongoDbService.GetCurrentSeason();
-            Console.WriteLine("End");
-            return await _tradeDataService.GetTradesBySeason(userId, season.Id);
+            return await _tradeDataService.GetTrades(userId);
         }
 
         [HttpPost("newtrade")]

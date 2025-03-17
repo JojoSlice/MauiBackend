@@ -34,8 +34,12 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult> RegisterUser(User user)
+    public async Task<ActionResult> RegisterUser([FromBody] User user)
     {
+        Console.WriteLine("Register called");
+        Console.WriteLine(user.Username);
+        Console.WriteLine(user.Name);
+        
         if (await _mongoDbService.IsUsernameTakenAsync(user.Username))
         {
             return Conflict("Username already taken.");

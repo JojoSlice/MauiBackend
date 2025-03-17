@@ -54,19 +54,20 @@ namespace MauiBackend.Services
 
             if (trade != null && trade.IsOpen)
             {
+                double pnlPercentage = 0;
                 double pnl = 0;
+
                 if (closeTrade.ClosingPrice != null)
                 {
-                    if (trade.IsLong)
-                    {
-                        pnl = (closeTrade.ClosingPrice.Value - trade.Price) * trade.PointsUsed;
-                    }
-                    else
-                    {
-                        pnl = (trade.Price - closeTrade.ClosingPrice.Value) * trade.PointsUsed;
-                    }
-                }
+                    pnlPercentage = ((closeTrade.ClosingPrice.Value - trade.Price) / trade.Price) * 100;
 
+                    if (!trade.IsLong)
+                    {
+                        pnlPercentage *= -1;
+                    }
+
+                    pnl = (pnlPercentage / 100) * trade.PointsUsed;
+                }
                 var update = Builders<TradeData>.Update
                     .Set(td => td.IsOpen, false)
                     .Set(td => td.PnLPercent, pnl)

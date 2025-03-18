@@ -7,15 +7,13 @@ namespace MauiBackend.Services
     {
         private readonly IMongoCollection<PnLData> _pnlDataCollection;
         private readonly MongoDbService _mongoDbService;
-        private readonly TradeDataService _tradeDataService;
-        public PnLService(IConfiguration config, MongoDbService mongoDbService, TradeDataService tradeDataService)
+        public PnLService(IConfiguration config, MongoDbService mongoDbService)
         {
 
             var client = new MongoClient(config["MongoDB:ConnectionString"]);
             var database = client.GetDatabase(config["MongoDB:Database"]);
             _pnlDataCollection = database.GetCollection<PnLData>("PnLData");
             _mongoDbService = mongoDbService;
-            _tradeDataService = tradeDataService;
         }
 
         public async Task<List<PnLData>> GetPnLAsync(string userId)
@@ -39,16 +37,19 @@ namespace MauiBackend.Services
                 Builders<PnLData>.Filter.Eq(pnl => pnl.SeasonId, season.Id));
 
             List<PnLData> pnls = new();
-            await UpdatePnLAsync(userId);
 
             pnls = await _pnlDataCollection.Find(filter).ToListAsync();
 
-            if (pnls.Count == 0)
+            
+            var latestPnl = await GetLatestPnL(userId);
+            
+            if ( latestPnl == null || latestPnl.Date.Date != DateTime.UtcNow.Date )
             {
                 var newPnl = new PnLData
                 {
                     UserId = userId,
                     SeasonId = season.Id,
+                    PnL = latestPnl?.PnL ?? 0,
                     Date = DateTime.UtcNow
                 };
 
@@ -60,44 +61,51 @@ namespace MauiBackend.Services
             return pnls;
         }
 
-
-        public async Task UpdatePnLAsync(string id)
+        public async Task<PnLData> GetLatestPnL(string userId)
         {
-            var pnl = new List<PnLData>();
+            var season = await _mongoDbService.GetCurrentSeason();
 
-            var allTrades = await _tradeDataService.GetClosedTradesByUserIdAsync(id);
+            var filter = Builders<PnLData>.Filter.And(
+                Builders<PnLData>.Filter.Eq(pnl => pnl.UserId, userId),
+                Builders<PnLData>.Filter.Eq(pnl => pnl.SeasonId, season.Id));
 
-            if (allTrades.Any())
-            {
-                var tradesByDate = allTrades.GroupBy(td => td.TradeDate.Date)
-                    .Select(g => new
-                    {
-                        Date = g.Key,
-                        TotalPnLPercent = g.Sum(t => t.PnLPercent)
-                    })
-                    .OrderBy(g => g.Date)
-                    .ToList();
+            List<PnLData> pnls = new();
 
-                foreach (var tradDate in tradesByDate)
-                {
-                    pnl.Add(new PnLData
-                    {
-                        UserId = id,
-                        Date = tradDate.Date,
-                        PnL = tradDate.TotalPnLPercent ?? 0
-                    });
-                }
-            }
+            pnls = await _pnlDataCollection.Find(filter).ToListAsync();
+            var today = DateTime.UtcNow.Date;
 
-            var filter = Builders<PnLData>.Filter.Eq(p => p.UserId, id);
-
-
-            if (pnl.Any())
-            {
-                await _pnlDataCollection.DeleteManyAsync(filter);
-                await _pnlDataCollection.InsertManyAsync(pnl);
-            }
+            
+            return pnls.OrderByDescending(p => p.Date).FirstOrDefault();
         }
 
+        public async Task UpdatePnL(TradeData trade)
+        {
+            var today = DateTime.UtcNow.Date;
+            var filter = Builders<PnLData>.Filter.And(
+                Builders<PnLData>.Filter.Eq(p => p.UserId, trade.UserId),
+                Builders<PnLData>.Filter.Eq(p => p.Date.Date, today));
+
+            var pnl = await _pnlDataCollection.Find(filter).FirstOrDefaultAsync();
+            if (pnl != null)
+            {
+                var update = Builders<PnLData>.Update.Inc(p => p.PnL, trade.PnLPercent.Value);
+
+                await _pnlDataCollection.UpdateOneAsync(filter, update);
+            }
+            else
+            {
+                var latestPnl = await GetLatestPnL(trade.UserId);
+
+                var newPnL = new PnLData
+                {
+                    UserId = trade.UserId,
+                    Date = today,
+                    PnL = latestPnl.PnL += trade.PnLPercent.Value
+                };
+
+                
+                await _pnlDataCollection.InsertOneAsync(newPnL);
+            }
+        }
     }
 }

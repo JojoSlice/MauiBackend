@@ -55,7 +55,7 @@ namespace MauiBackend.Controllers
                 await _tradeDataService.AddTradeDataAsync(trade);
                 var user = await _mongoDbService.GetUserByIdAsync(trade.UserId);
                 user.Points = user.Points - trade.PointsUsed;
-                await _mongoDbService.UpdateUserPointsAsync(user);
+                await _mongoDbService.UpdateUserPointsAsync(user.Id, user.Points);
             }
 
             Console.WriteLine("End");

@@ -7,10 +7,12 @@ namespace MauiBackend.Services
     {
         private readonly MongoDbService _mongoDbService;
         private readonly IMongoCollection<TradeData> _tradeDataCollection;
-        public TradeDataService(MongoDbService mongoDbService)
+        private readonly PnLService _pnLService;
+        public TradeDataService(MongoDbService mongoDbService, PnLService pnLService)
         {
             _mongoDbService = mongoDbService;
             _tradeDataCollection = _mongoDbService.GetTradeDataCollection();
+            _pnLService = pnLService;
         }
         public async Task AddTradeDataAsync(TradeData tradeData)
         {
@@ -68,15 +70,25 @@ namespace MauiBackend.Services
 
                     pnl = (pnlPercentage / 100) * trade.PointsUsed;
                 }
-                var update = Builders<TradeData>.Update
+
+                var updateTrade = Builders<TradeData>.Update
                     .Set(td => td.IsOpen, false)
                     .Set(td => td.PnLPercent, pnl)
                     .Set(td => td.ClosingPrice, closeTrade.ClosingPrice);
 
-                await _tradeDataCollection.UpdateOneAsync(filter, update);
-            }
+                var user = await _mongoDbService.GetUserByIdAsync(trade.UserId);
 
+                user.Points += (int)Math.Round(trade.PointsUsed * (1 + pnlPercentage / 100));
+
+                await _mongoDbService.UpdateUserPointsAsync(user.Id, user.Points);
+
+                await _tradeDataCollection.UpdateOneAsync(filter, updateTrade);
+
+                await _pnLService.UpdatePnL(trade);
+            }
         }
+
+
         //Lös/Kontrollera senare!
         //Kan vara bra att se till att varken takeprofit eller stoploss hamnar för nära currentPrice
         public async Task UpdateTakeProfitAsync(string tradeId, double takeProfit, double currentPrice)

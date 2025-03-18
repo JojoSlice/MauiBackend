@@ -78,11 +78,11 @@ namespace MauiBackend.Services
             await _usersCollection.InsertOneAsync(user);
         }
 
-        public async Task UpdateUserPointsAsync(User user)
+        public async Task UpdateUserPointsAsync(string userId, double points)
         {
-            var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id);
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
             var update = Builders<User>.Update
-                .Set(u => u.Points, user.Points);
+                .Set(u => u.Points, points);
 
             await _usersCollection.UpdateOneAsync(filter, update);
         }
@@ -103,5 +103,7 @@ namespace MauiBackend.Services
 
             return season;
         }
+
+
     }
 }

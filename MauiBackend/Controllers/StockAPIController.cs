@@ -16,7 +16,7 @@ namespace MauiBackend.Controllers
         private readonly TradeDataService _tradeDataService;
         private readonly MongoDbService _mongoDbService;
         private readonly HttpClient _httpClient = new HttpClient();
-        private readonly string _apiKey = "dlXd5o50tlssBxnGjwBwRg==aM7Kx2NTPEY1tgwU";
+        private readonly string _apiKey = "";
 
         public StockAPIController(MongoDbService mongoDbService, TradeDataService tradeDataService)
         {

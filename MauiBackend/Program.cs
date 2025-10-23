@@ -12,12 +12,19 @@ namespace MauiBackend
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            var key = Encoding.UTF8.GetBytes("MegaHemligNyckel1337MegaHemligNyckel1337");
+            var jwtSecret = builder.Configuration["JwtSettings:SecretKey"];
+            if (string.IsNullOrEmpty(jwtSecret))
+            {
+                throw new InvalidOperationException("JWT Secret Key is not configured. Please set JwtSettings:SecretKey in appsettings.json or environment variables.");
+            }
+
+            var key = Encoding.UTF8.GetBytes(jwtSecret);
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.RequireHttpsMetadata = false;
+                    // Only disable HTTPS requirement in Development environment
+                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
                     options.SaveToken = true;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {

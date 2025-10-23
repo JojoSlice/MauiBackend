@@ -361,3 +361,41 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+##
+## Custom: Sensitive Configuration Files
+##
+
+# Application settings with secrets (use appsettings.example.json as template)
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.*.json
+!appsettings.example.json
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# User secrets (ASP.NET Core User Secrets)
+secrets.json
+
+# Certificate files
+*.pfx
+*.p12
+*.key
+*.pem
+*.crt
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Local configuration overrides
+local.settings.json
+*.local.json
